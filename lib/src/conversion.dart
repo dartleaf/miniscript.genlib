@@ -159,6 +159,10 @@ class ConversionUtils {
       }
     }
 
+    if (value is ValFunction) {
+      return valueToDartFunction(value);
+    }
+
     if (force) {
       if (value is ValList) {
         // Recursively convert each element to Dart
