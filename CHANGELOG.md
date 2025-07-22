@@ -1,3 +1,7 @@
+## 0.0.1-alpha7
+
+- Bump version.
+
 ## 0.0.1-alpha6
 
 - Export miniscript lib.
