@@ -108,11 +108,9 @@ class ConversionUtils {
     return fn.getFunc();
   }
 
-  static Value? Function(List<Value?> args) valueToDartFunction(
-    Interpreter interpreter,
-    ValFunction function,
-  ) {
-    return (List<Value?> args) {
+  static Value? Function(Interpreter interpreter, List<Value?> args)
+  valueToDartFunction(ValFunction function) {
+    return (Interpreter interpreter, List<Value?> args) {
       interpreter.setGlobalValue("\$_call", function);
       interpreter.setGlobalValue("\$_args", ValList(args));
 
@@ -131,11 +129,7 @@ class ConversionUtils {
   ///
   /// This is the main conversion method that handles all MiniScript -> Dart
   /// conversions including primitives, collections, wrappers, and null values.
-  static dynamic valueToDart<T extends Value>(
-    Interpreter interpreter,
-    T? value, {
-    bool force = true,
-  }) {
+  static dynamic valueToDart<T extends Value>(T? value, {bool force = true}) {
     if (value == null || value is ValNull) {
       return null;
     }
@@ -149,7 +143,7 @@ class ConversionUtils {
     }
 
     if (value is ValFunction) {
-      return valueToDartFunction(interpreter, value);
+      return valueToDartFunction(value);
     }
 
     // Handle BaseWrapper objects - import handled via late binding
@@ -167,9 +161,7 @@ class ConversionUtils {
     if (force) {
       if (value is ValList) {
         // Recursively convert each element to Dart
-        return value.values
-            .map((e) => valueToDart(interpreter, e, force: true))
-            .toList();
+        return value.values.map((e) => valueToDart(e, force: true)).toList();
       }
 
       if (value is ValMap) {
@@ -177,8 +169,8 @@ class ConversionUtils {
         final realMap = value.map.realMap;
         return realMap.map(
           (k, v) => MapEntry(
-            valueToDart(interpreter, k, force: true),
-            valueToDart(interpreter, v, force: true),
+            valueToDart(k, force: true),
+            valueToDart(v, force: true),
           ),
         );
       }
