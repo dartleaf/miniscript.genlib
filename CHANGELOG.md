@@ -1,16 +1,11 @@
-<<<<<<< HEAD
 ## 0.0.1-alpha12
 
 - Refactor utility functions.
 
 ## 0.0.1-alpha11
 
-=======
-## 0.0.1-alpha11
-
 - Refactor utility functions.
 
->>>>>>> f33f023156c34f1d10cb28fd08e78c8c4061f919
 ## 0.0.1-alpha10
 
 - Refactor utility functions.
