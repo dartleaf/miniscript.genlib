@@ -9,27 +9,6 @@ class DartFunction {
   DartFunction(this.function, this.params);
 }
 
-class ValueFunction {
-  final ValFunction function;
-  final Interpreter interpreter;
-
-  ValueFunction(this.interpreter, this.function);
-
-  Value? call(List<Value?> args) {
-    interpreter.setGlobalValue("\$_call", function);
-    interpreter.setGlobalValue("\$_args", ValList(args));
-
-    String argText = "";
-
-    for (int i = 0; i < args.length; i++) {
-      argText += "\$_args[$i], ";
-    }
-
-    interpreter.repl("globals.\$_ret = \$_call $argText");
-    return interpreter.getGlobalValue("\$_ret");
-  }
-}
-
 /// Static utility class for type conversions between Dart and MiniScript.
 ///
 /// This is the single source of truth for all conversions in the system.
@@ -130,10 +109,22 @@ class ConversionUtils {
   }
 
   static Value? Function(List<Value?> args) valueToDartFunction(
-    ValueFunction function,
+    Context context,
+    ValFunction function,
   ) {
     return (List<Value?> args) {
-      return function.call(args);
+      final interpreter = context.interpreter!;
+      interpreter.setGlobalValue("\$_call", function);
+      interpreter.setGlobalValue("\$_args", ValList(args));
+
+      String argText = "";
+
+      for (int i = 0; i < args.length; i++) {
+        argText += "\$_args[$i], ";
+      }
+
+      interpreter.repl("globals.\$_ret = \$_call $argText");
+      return interpreter.getGlobalValue("\$_ret");
     };
   }
 
@@ -141,7 +132,11 @@ class ConversionUtils {
   ///
   /// This is the main conversion method that handles all MiniScript -> Dart
   /// conversions including primitives, collections, wrappers, and null values.
-  static dynamic valueToDart<T extends Value>(T? value, {bool force = true}) {
+  static dynamic valueToDart<T extends Value>(
+    Context context,
+    T? value, {
+    bool force = true,
+  }) {
     if (value == null || value is ValNull) {
       return null;
     }
@@ -166,10 +161,16 @@ class ConversionUtils {
       }
     }
 
+    if (value is ValFunction) {
+      return valueToDartFunction(context, value);
+    }
+
     if (force) {
       if (value is ValList) {
         // Recursively convert each element to Dart
-        return value.values.map((e) => valueToDart(e, force: true)).toList();
+        return value.values
+            .map((e) => valueToDart(context, e, force: true))
+            .toList();
       }
 
       if (value is ValMap) {
@@ -177,8 +178,8 @@ class ConversionUtils {
         final realMap = value.map.realMap;
         return realMap.map(
           (k, v) => MapEntry(
-            valueToDart(k, force: true),
-            valueToDart(v, force: true),
+            valueToDart(context, k, force: true),
+            valueToDart(context, v, force: true),
           ),
         );
       }
