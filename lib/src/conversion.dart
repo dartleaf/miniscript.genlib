@@ -9,6 +9,27 @@ class DartFunction {
   DartFunction(this.function, this.params);
 }
 
+class ValueFunction {
+  final ValFunction function;
+  final Interpreter interpreter;
+
+  ValueFunction(this.interpreter, this.function);
+
+  Value? call(List<Value?> args) {
+    interpreter.setGlobalValue("\$_call", function);
+    interpreter.setGlobalValue("\$_args", ValList(args));
+
+    String argText = "";
+
+    for (int i = 0; i < args.length; i++) {
+      argText += "\$_args[$i], ";
+    }
+
+    interpreter.repl("globals.\$_ret = \$_call $argText");
+    return interpreter.getGlobalValue("\$_ret");
+  }
+}
+
 /// Static utility class for type conversions between Dart and MiniScript.
 ///
 /// This is the single source of truth for all conversions in the system.
@@ -108,20 +129,11 @@ class ConversionUtils {
     return fn.getFunc();
   }
 
-  static Value? Function(Interpreter interpreter, List<Value?> args)
-  valueToDartFunction(ValFunction function) {
-    return (Interpreter interpreter, List<Value?> args) {
-      interpreter.setGlobalValue("\$_call", function);
-      interpreter.setGlobalValue("\$_args", ValList(args));
-
-      String argText = "";
-
-      for (int i = 0; i < args.length; i++) {
-        argText += "\$_args[$i], ";
-      }
-
-      interpreter.repl("globals.\$_ret = \$_call $argText");
-      return interpreter.getGlobalValue("\$_ret");
+  static Value? Function(List<Value?> args) valueToDartFunction(
+    ValueFunction function,
+  ) {
+    return (List<Value?> args) {
+      return function.call(args);
     };
   }
 
@@ -140,10 +152,6 @@ class ConversionUtils {
 
     if (value is ValNumber) {
       return value.value;
-    }
-
-    if (value is ValFunction) {
-      return valueToDartFunction(value);
     }
 
     // Handle BaseWrapper objects - import handled via late binding
