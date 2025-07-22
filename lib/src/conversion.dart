@@ -2,6 +2,13 @@ import 'package:miniscript/miniscript.dart';
 import 'package:miniscriptgenlib/src/cache.dart';
 import 'package:miniscriptgenlib/src/base_wrapper.dart';
 
+class DartFunction {
+  final Function(List<dynamic>) function;
+  final List<String> params;
+
+  DartFunction(this.function, this.params);
+}
+
 /// Static utility class for type conversions between Dart and MiniScript.
 ///
 /// This is the single source of truth for all conversions in the system.
@@ -72,6 +79,10 @@ class ConversionUtils {
       }
     }
 
+    if (dartValue is DartFunction) {
+      return dartToValueFunction(dartValue);
+    }
+
     final wrapper = MiniScriptCache.instance.getWrapper<T>();
 
     if (wrapper == null) {
@@ -81,19 +92,38 @@ class ConversionUtils {
     return wrapper.call(dartValue);
   }
 
-  static Value? Function(Interpreter interpreter, List<Value?> args)
-  valueToDartFunction(ValFunction function) {
-    return (Interpreter interpreter, List<Value?> args) {
-      final context = Context([]);
-      if (interpreter.vm != null) {
-        context.parent = interpreter.vm!.globalContext;
+  static ValFunction dartToValueFunction(DartFunction dartFunction) {
+    final fn = Intrinsic.create("\$_");
+    fn.name = dartFunction.hashCode.toString();
+    for (final name in dartFunction.params) {
+      fn.addParam(name);
+    }
+    fn.code = (context, [partialResult]) {
+      final args = [];
+      for (final name in dartFunction.params) {
+        args.add(context.getLocal(name));
+      }
+      return IntrinsicResult(dartFunction.function(args));
+    };
+    return fn.getFunc();
+  }
+
+  static Value? Function(List<Value?> args) valueToDartFunction(
+    Interpreter interpreter,
+    ValFunction function,
+  ) {
+    return (List<Value?> args) {
+      interpreter.setGlobalValue("\$_call", function);
+      interpreter.setGlobalValue("\$_args", ValList(args));
+
+      String argText = "";
+
+      for (int i = 0; i < args.length; i++) {
+        argText += "\$_args[$i], ";
       }
 
-      for (final line in context.code) {
-        line.evaluate(context);
-      }
-
-      return context.resultStorage;
+      interpreter.repl("globals.\$_ret = \$_call $argText");
+      return interpreter.getGlobalValue("\$_ret");
     };
   }
 
@@ -101,7 +131,11 @@ class ConversionUtils {
   ///
   /// This is the main conversion method that handles all MiniScript -> Dart
   /// conversions including primitives, collections, wrappers, and null values.
-  static dynamic valueToDart<T extends Value>(T? value, {bool force = true}) {
+  static dynamic valueToDart<T extends Value>(
+    Interpreter interpreter,
+    T? value, {
+    bool force = true,
+  }) {
     if (value == null || value is ValNull) {
       return null;
     }
@@ -115,7 +149,7 @@ class ConversionUtils {
     }
 
     if (value is ValFunction) {
-      return valueToDartFunction(value);
+      return valueToDartFunction(interpreter, value);
     }
 
     // Handle BaseWrapper objects - import handled via late binding
@@ -133,7 +167,9 @@ class ConversionUtils {
     if (force) {
       if (value is ValList) {
         // Recursively convert each element to Dart
-        return value.values.map((e) => valueToDart(e, force: true)).toList();
+        return value.values
+            .map((e) => valueToDart(interpreter, e, force: true))
+            .toList();
       }
 
       if (value is ValMap) {
@@ -141,8 +177,8 @@ class ConversionUtils {
         final realMap = value.map.realMap;
         return realMap.map(
           (k, v) => MapEntry(
-            valueToDart(k, force: true),
-            valueToDart(v, force: true),
+            valueToDart(interpreter, k, force: true),
+            valueToDart(interpreter, v, force: true),
           ),
         );
       }
@@ -158,38 +194,5 @@ class ConversionUtils {
 
     // For other types, return as-is
     return value;
-  }
-
-  /// Gets the type name of a MiniScript Value as a string.
-  static String getTypeName(Value? value) {
-    if (value == null || value is ValNull) {
-      return 'null';
-    }
-
-    if (value is ValString) {
-      return 'string';
-    }
-
-    if (value is ValNumber) {
-      return 'number';
-    }
-
-    if (value is ValList) {
-      return 'list';
-    }
-
-    if (value is ValMap) {
-      if (value.runtimeType.toString().contains('BaseWrapper')) {
-        try {
-          final userData = (value as dynamic).userData;
-          return 'object(${userData.runtimeType})';
-        } catch (e) {
-          return 'object';
-        }
-      }
-      return 'map';
-    }
-
-    return value.runtimeType.toString();
   }
 }
