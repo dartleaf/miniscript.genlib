@@ -1,3 +1,7 @@
+## 0.0.2-alpha1
+
+- Add support for custom functions.
+
 ## 0.0.1-alpha14
 
 - Add support for custom functions.
