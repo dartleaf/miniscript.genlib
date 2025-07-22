@@ -26,6 +26,16 @@ class ConversionUtils {
     return value;
   }
 
+  static Value? Function(List<Value?> args) wrapFunction(
+    Context context,
+    Value? Function(Interpreter interpreter, List<Value?> args) function,
+  ) {
+    return (List<Value?> args) {
+      final interpreter = context.interpreter!;
+      return function(interpreter, args);
+    };
+  }
+
   /// Converts a Dart object to a MiniScript Value.
   ///
   /// This is the main conversion method that handles all Dart -> MiniScript

@@ -1,3 +1,7 @@
+## 0.0.1-alpha13
+
+- Add support for custom functions.
+
 ## 0.0.1-alpha12
 
 - Refactor utility functions.
