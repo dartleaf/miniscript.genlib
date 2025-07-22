@@ -28,11 +28,10 @@ class ConversionUtils {
 
   static Value? Function(List<Value?> args) wrapFunction(
     Context context,
-    Value? Function(Interpreter interpreter, List<Value?> args) function,
+    Value? Function(Context context, List<Value?> args) function,
   ) {
     return (List<Value?> args) {
-      final interpreter = context.interpreter!;
-      return function(interpreter, args);
+      return function(context, args);
     };
   }
 
@@ -40,7 +39,7 @@ class ConversionUtils {
     if (value is Function) {
       return wrapFunction(
         context,
-        value as Value? Function(Interpreter interpreter, List<Value?> args),
+        value as Value? Function(Context context, List<Value?> args),
       );
     }
     return value;

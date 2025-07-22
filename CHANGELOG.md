@@ -1,3 +1,7 @@
+## 0.0.2-alpha2
+
+- Fix bug in custom function conversion.
+
 ## 0.0.2-alpha1
 
 - Add support for custom functions.
