@@ -1,3 +1,9 @@
+## 0.0.1-alpha12
+
+- Refactor utility functions.
+
+## 0.0.1-alpha11
+
 ## 0.0.1-alpha10
 
 - Refactor utility functions.
