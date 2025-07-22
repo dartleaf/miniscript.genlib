@@ -1,6 +1,6 @@
 name: miniscriptgenlib
 description: A code generator annotations for Miniscript.
-version: 0.0.1-alpha13
+version: 0.0.1-alpha14
 repository: https://github.com/dartleaf/miniscript.genlib
 
 environment:
